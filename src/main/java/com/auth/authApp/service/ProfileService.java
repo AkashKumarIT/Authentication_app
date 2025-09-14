@@ -5,4 +5,6 @@ import com.auth.authApp.io.ProfileResponseDTO;
 
 public interface ProfileService {
     ProfileResponseDTO createProfile(ProfileRequestDTO request);
+
+    ProfileResponseDTO getProfile(String email);
 }

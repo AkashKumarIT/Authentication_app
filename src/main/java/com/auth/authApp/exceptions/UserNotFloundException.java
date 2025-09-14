@@ -1,4 +1,7 @@
 package com.auth.authApp.exceptions;
 
-public class UserNotFloundException {
+public class UserNotFloundException extends RuntimeException{
+    public UserNotFloundException(String message) {
+        super(message);
+    }
 }

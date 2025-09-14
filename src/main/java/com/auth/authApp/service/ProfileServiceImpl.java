@@ -3,6 +3,7 @@ package com.auth.authApp.service;
 
 import com.auth.authApp.entity.UserEntity;
 import com.auth.authApp.exceptions.EmailAlreadyExistsException;
+import com.auth.authApp.exceptions.UserNotFloundException;
 import com.auth.authApp.io.ProfileRequestDTO;
 import com.auth.authApp.io.ProfileResponseDTO;
 import com.auth.authApp.mapper.ProfileMapper;
@@ -30,5 +31,12 @@ public class ProfileServiceImpl implements ProfileService{
         }
 //        throw new ResponseStatusException(HttpStatus.CONFLICT,"Email already exists");
         throw new EmailAlreadyExistsException("User with this email already exists " + request.getEmail());
+    }
+
+    @Override
+    public ProfileResponseDTO getProfile(String email) {
+        UserEntity userEntity = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UserNotFloundException("User with email " + email + " not found"));
+        return ProfileMapper.convertToProfileResponse(userEntity);
     }
 }

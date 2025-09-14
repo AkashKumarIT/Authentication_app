@@ -22,7 +22,8 @@ public class ProfileController {
 
     @GetMapping("/profile")
     public ResponseEntity<ProfileResponseDTO> getProfile(@CurrentSecurityContext(expression = "authentication?.name")String email){
-
+        ProfileResponseDTO profileResponse = profileService.getProfile(email);
+        return ResponseEntity.ok().body(profileResponse);
     }
 
 }

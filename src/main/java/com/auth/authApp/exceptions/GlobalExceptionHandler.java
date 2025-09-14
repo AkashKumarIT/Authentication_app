@@ -23,6 +23,8 @@ public class GlobalExceptionHandler {
 
         return ResponseEntity.badRequest().body(errors);
     }
+
+
     @ExceptionHandler(EmailAlreadyExistsException.class)
     public ResponseEntity<Map<String,String>> handelEmailAlreadyExistsException(EmailAlreadyExistsException ex){
         log.warn("Email already exists {},",ex.getMessage());
@@ -56,5 +58,13 @@ public class GlobalExceptionHandler {
         error.put("error",true);
         error.put("message","Authentication Failed");
         return ResponseEntity.status(403).body(error);
+    }
+
+    @ExceptionHandler(UserNotFloundException.class)
+    public ResponseEntity<Map<String,String>> handelUserNotFoundException(UserNotFloundException ex){
+        log.warn("User not found {}",ex.getMessage());
+        Map<String,String>error = new HashMap<>();
+        error.put("massage","User not found");
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
     }
 }
