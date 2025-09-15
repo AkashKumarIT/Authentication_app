@@ -12,12 +12,15 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.concurrent.ThreadLocalRandom;
+
 
 @Service
 @RequiredArgsConstructor
 public class ProfileServiceImpl implements ProfileService{
     private final UserRepository userRepository;
     private final ProfileMapper profileMapper;
+    private final EmailService emailService;
 
 //    public ProfileServiceImpl(UserRepository userRepository){
 //        this.userRepository = userRepository;
@@ -38,5 +41,48 @@ public class ProfileServiceImpl implements ProfileService{
         UserEntity userEntity = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UserNotFloundException("User with email " + email + " not found"));
         return ProfileMapper.convertToProfileResponse(userEntity);
+    }
+
+    @Override
+    public void sendResetOtp(String email) {
+        UserEntity existingUser = userRepository.findByEmail(email)
+                .orElseThrow(()-> new UserNotFloundException("User with email " + email + " not found"));
+        // generate 6 digit otp
+        String otp = String.valueOf(ThreadLocalRandom.current().nextInt(100000,1000000));
+
+        //set expire time for the otp
+        long expireTime = System.currentTimeMillis() + (10 * 60 * 1000);
+
+        existingUser.setResetOtp(otp);
+        existingUser.setResetOtpExpireAt(expireTime);
+
+        userRepository.save(existingUser);
+
+        try {
+            // send the reset otp email
+            emailService.sendResetOtpEmail(existingUser.getEmail(),otp);
+        }catch(Exception ex){
+            throw new RuntimeException("Unable to send email");
+        }
+    }
+
+    @Override
+    public void resetPassword(String email, String otp, String newPassword) {
+        UserEntity userEntity = userRepository.findByEmail(email)
+                .orElseThrow(()-> new UserNotFloundException("User with email " + email + " not found"));
+
+        if(userEntity.getResetOtp() == null || !userEntity.getResetOtp().equals(otp)){
+            throw new RuntimeException("Invalid OTP");
+        }
+
+        if(userEntity.getResetOtpExpireAt() < System.currentTimeMillis()){
+            throw new RuntimeException("OTP Expired");
+        }
+
+        userEntity.setPassword(newPassword);
+        userEntity.setResetOtp(null);
+        userEntity.setResetOtpExpireAt(0L);
+
+        userRepository.save(userEntity);
     }
 }
