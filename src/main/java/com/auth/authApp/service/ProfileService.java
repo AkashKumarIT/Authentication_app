@@ -10,4 +10,9 @@ public interface ProfileService {
     void sendResetOtp(String email);
 
     void resetPassword(String email,String otp,String newPassword);
+
+    void sendEmailVerifyOtp(String email);
+
+    void verifyEmailverificationOtp(String email, String otp);
+
 }

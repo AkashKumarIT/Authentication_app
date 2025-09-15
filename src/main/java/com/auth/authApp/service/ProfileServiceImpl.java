@@ -85,4 +85,53 @@ public class ProfileServiceImpl implements ProfileService{
 
         userRepository.save(userEntity);
     }
+
+    @Override
+    public void sendEmailVerifyOtp(String email) {
+        UserEntity existingUser = userRepository.findByEmail(email)
+                .orElseThrow(()-> new UserNotFloundException("User with email " + email + " not found"));
+
+        if(existingUser.getIsAccountVerified() != null && existingUser.getIsAccountVerified()){
+            throw new RuntimeException("Account already verified");
+        }
+
+        //Generate 6 digit otp
+        String otp = String.valueOf(ThreadLocalRandom.current().nextInt(100000,1000000));
+
+        //set expire time for the otp
+        long expireTime = System.currentTimeMillis() + (10 * 60 * 1000);
+
+        existingUser.setVerifyOtp(otp);
+        existingUser.setVerifyOtpExpireAt(expireTime);
+
+        userRepository.save(existingUser);
+
+        try {
+            // send the reset otp email
+            emailService.sendEmailVerificationOtp(existingUser.getEmail(),otp);
+        }catch(Exception ex) {
+            throw new RuntimeException("Unable to send email");
+        }
+    }
+
+    @Override
+    public void verifyEmailverificationOtp(String email, String otp) {
+        UserEntity existingUser = userRepository.findByEmail(email)
+                .orElseThrow(()-> new UserNotFloundException("User with email " + email + " not found"));
+
+        if(existingUser.getVerifyOtp() == null || !existingUser.getVerifyOtp().equals(otp)){
+            throw new RuntimeException("Invalid OTP");
+        }
+
+        if(existingUser.getVerifyOtpExpireAt() < System.currentTimeMillis()){
+            throw new RuntimeException("OTP Expired");
+        }
+
+        existingUser.setIsAccountVerified(true);
+        existingUser.setVerifyOtp(null);
+        existingUser.setVerifyOtpExpireAt(0L);
+
+        userRepository.save(existingUser);
+    }
+    
 }

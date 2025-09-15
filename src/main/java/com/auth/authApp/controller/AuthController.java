@@ -5,10 +5,12 @@ import com.auth.authApp.exceptions.AuthenticationFailedException;
 import com.auth.authApp.exceptions.EmailOrPasswordIncorrectException;
 import com.auth.authApp.io.AuthRequestDTO;
 import com.auth.authApp.io.AuthResponseDTO;
+import com.auth.authApp.io.ResetPasswordRequest;
 import com.auth.authApp.service.AppUserDetailsService;
 import com.auth.authApp.service.ProfileService;
 import com.auth.authApp.service.ProfileServiceImpl;
 import com.auth.authApp.util.JwtUtil;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -69,6 +71,38 @@ public class AuthController {
     public void sendResetOtp(@RequestParam String email){
         try {
             profileService.sendResetOtp(email);
+        }catch(Exception e){
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
+        }
+    }
+
+    @PostMapping("/reset-password")
+    public void resetPassword(@Valid @RequestBody ResetPasswordRequest request){
+        try{
+            profileService.resetPassword(request.getEmail(),request.getOtp(),request.getNewPassword());
+        }catch(Exception e){
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
+        }
+    }
+
+    @GetMapping("/send-verify-email-otp")
+    public void sendVerifyEmailOtp(@CurrentSecurityContext(expression = "authentication?.name") String email){
+        try {
+            profileService.sendEmailVerifyOtp(email);
+        }catch(Exception e){
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
+        }
+
+    }
+
+    @PostMapping("/verify-email")
+    public void verifyEmail(@RequestBody Map<String,Object> request, @CurrentSecurityContext(expression = "authentication?.name") String email){
+
+        if(request.get("otp").toString() == null){
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Missing Details");
+        }
+        try{
+            profileService.verifyEmailverificationOtp(email,request.get("otp").toString());
         }catch(Exception e){
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
         }
